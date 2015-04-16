@@ -48,17 +48,16 @@ describe('rest-pipeline', function () {
           get: function () {}
         }
       });
-
       return Promise.all([
         request(app)
         .get('/test/')
-        .expect(401),
+        .expect(204),
         request(app)
         .get('/test')
-        .expect(401),
+        .expect(204),
         request(app)
         .get('/test/blah')
-        .expect(401),
+        .expect(204),
         request(app)
         .get('/tesst/')
         .expect(404)
@@ -74,17 +73,16 @@ describe('rest-pipeline', function () {
           get: function () {}
         }
       }, '/dev');
-
       return Promise.all([
         request(app)
         .get('/dev/test/')
-        .expect(401),
+        .expect(204),
         request(app)
         .get('/dev/test')
-        .expect(401),
+        .expect(204),
         request(app)
         .get('/dev/test/blah')
-        .expect(401)
+        .expect(204)
       ]);
     });
 
@@ -97,14 +95,13 @@ describe('rest-pipeline', function () {
           get: function () {}
         }
       });
-
       return Promise.all([
         request(app)
         .get('/')
-        .expect(401),
+        .expect(204),
         request(app)
         .get('/blah')
-        .expect(401),
+        .expect(204),
         request(app)
         .get('/abc')
         .expect(404)
@@ -124,7 +121,6 @@ describe('rest-pipeline', function () {
           }
         }
       });
-
       return request(app)
       .get('/')
       .expect(204);
@@ -143,7 +139,6 @@ describe('rest-pipeline', function () {
             }
           }
         });
-
         return request(app)
         .get('/')
         .expect(200)
@@ -165,7 +160,6 @@ describe('rest-pipeline', function () {
             }
           }
         });
-
         return Promise.race([
           request(app)
           .get('/')
@@ -173,7 +167,9 @@ describe('rest-pipeline', function () {
           .then(function () {
             return Promise.reject();
           }),
-          Promise.delay(1000)
+          new Promise(function (resolve) {
+            process.nextTick(resolve);
+          })
         ]);
       });
 
@@ -189,7 +185,6 @@ describe('rest-pipeline', function () {
             }
           }
         });
-
         return request(app)
         .get('/')
         .expect(200, {})
@@ -210,10 +205,9 @@ describe('rest-pipeline', function () {
             }
           }
         });
-
         return request(app)
         .get('/')
-        .expect(200, '"foo"')
+        .expect(200, '"foo"') // Is a JSON string.
         .expect('Content-Type', /json/);
       });
 
@@ -231,7 +225,6 @@ describe('rest-pipeline', function () {
             }
           }
         });
-
         return request(app)
         .get('/')
         .expect(400, '"foo"')
@@ -251,7 +244,6 @@ describe('rest-pipeline', function () {
           }
         }
       });
-
       return request(app)
       .get('/')
       .expect(400);
@@ -288,7 +280,6 @@ describe('rest-pipeline', function () {
           }
         }
       });
-
       return request(app)
       .get('/')
       .expect(200, ['abc', 'def'])
@@ -307,7 +298,6 @@ describe('rest-pipeline', function () {
           }
         }
       });
-
       return request(app)
       .get('/')
       .expect(200, '<a></a>')
@@ -326,7 +316,6 @@ describe('rest-pipeline', function () {
           }
         }
       });
-
       return request(app)
       .get('/')
       .expect(200, 'blahblah\nblahblah')
@@ -345,7 +334,6 @@ describe('rest-pipeline', function () {
           }
         }
       });
-
       return request(app)
       .get('/')
       .expect(204);
@@ -354,50 +342,26 @@ describe('rest-pipeline', function () {
     it('should return 401 on no user', function () {
       pipeline.register({
         '/': {
-          get: function() {}
+          get: {
+            authentication: 'bearer',
+            action: function() {}
+          }
         }
       });
-
       return request(app)
       .get('/')
       .expect(401);
     });
 
-    it('should return 401 on no user (object style)', function () {
+    it('should succeed when using bearer and user exists', function () {
       pipeline.register({
         '/': {
           get: {
+            authentication: 'bearer',
             action: function() {}
           }
         }
       });
-
-      return request(app)
-      .get('/')
-      .expect(401);
-    });
-
-    it('should succeed when using default and user exists', function () {
-      pipeline.register({
-        '/': {
-          get: function() {}
-        }
-      });
-      return request(app)
-      .get('/')
-      .set('Authorization', 'test')
-      .expect(204);
-    });
-
-    it('should succeed when using default and user exists (object style)', function () {
-      pipeline.register({
-        '/': {
-          get: {
-            action: function() {}
-          }
-        }
-      });
-
       return request(app)
       .get('/')
       .set('Authorization', 'test')
@@ -410,6 +374,7 @@ describe('rest-pipeline', function () {
       pipeline.register({
         '/': {
           get: {
+            authentication: 'bearer',
             authorization: function () {
               return Promise.resolve();
             },
@@ -417,7 +382,6 @@ describe('rest-pipeline', function () {
           }
         }
       });
-
       return request(app)
       .get('/')
       .set('Authorization', 'test')
@@ -428,6 +392,7 @@ describe('rest-pipeline', function () {
       pipeline.register({
         '/': {
           get: {
+            authentication: 'bearer',
             authorization: function () {
               return Promise.reject();
             },
@@ -435,7 +400,6 @@ describe('rest-pipeline', function () {
           }
         }
       });
-
       return request(app)
       .get('/')
       .set('Authorization', 'test')
@@ -446,6 +410,7 @@ describe('rest-pipeline', function () {
       pipeline.register({
         '/': {
           get: {
+            authentication: 'bearer',
             authorization: function () {
               return false;
             },
@@ -453,7 +418,6 @@ describe('rest-pipeline', function () {
           }
         }
       });
-
       return request(app)
       .get('/')
       .set('Authorization', 'test')
@@ -465,17 +429,12 @@ describe('rest-pipeline', function () {
     it('should have a context', function () {
       pipeline.register({
         '/': {
-          get: {
-            authorization: null,
-            authentication: null,
-            action: function() {
-              should.exist(this.req);
-              should.exist(this.res);
-            }
+          get: function() {
+            should.exist(this.req);
+            should.exist(this.res);
           }
         }
       });
-
       return request(app)
       .get('/')
       .expect(204);

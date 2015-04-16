@@ -5,20 +5,20 @@ var _ = require('lodash'),
 
 module.exports = function (options) {
   options = _.defaults(options || {}, {
-    defaultAuth: 'bearer',
+    defaultAuthentication: null,
+    defaultAuthorization: null,
     passport: null,
     sequelize: null,
     traceLogger: console.log,
     errorLogger: console.error,
     roleChecker: function () {
-      return true;
+      return false;
     }
   });
 
-  var router = express.Router();
-
   var validationError,
-      routeCache = {};
+      routeCache = {},
+      router = express.Router();
 
   // If null, blackhole it.
   if (_.isNull(options.traceLogger)) {
@@ -54,7 +54,7 @@ module.exports = function (options) {
         .catch(reject);
       } else { // Use passport authentication.
         if (!_.isNull(options.passport)) {
-          options.passport.authenticate(authMethod || options.defaultAuth, { session: false })(req, res, function (err) {
+          options.passport.authenticate(authMethod, { session: false })(req, res, function (err) {
             if (err) {
               reject();
             } else {
@@ -72,68 +72,41 @@ module.exports = function (options) {
   }
 
   function authorize (req, authMethod) {
-    return new Promise(function (resolve, reject) {
-      if (_.isUndefined(authMethod)) { // The default authorize is checking to see if a user exists.
-        if (_.isObject(req.user)) {
-          resolve();
-        } else {
-          reject();
-        }
-      } else {
-        if (_.isFunction(authMethod)) {
-          Promise.method(authMethod)(req)
-          .then(function (result) {
-            if (_.isUndefined(result) || (_.isBoolean(result) && result)) {
-              resolve();
-            } else {
-              reject();
-            }
-          })
-          .catch(reject);
-        } else if (_.isNull(authMethod)) {
-          resolve();
-        } else { // Otherwise the auth function is a predefined role or array of auth options.
-          if (_.isArray(authMethod)) {
-            var passed,
-                authCount = authMethod.length,
-                failCount = 0;
-            var asyncPass = function (innerPass) {
-              if (!passed) {
-                if (innerPass) {
-                  passed = true;
-                  resolve();
-                } else {
-                  failCount++;
-                  if (failCount === authCount) {
-                    reject();
-                  }
-                }
-              }
-            };
+    if (!_.isArray(authMethod)) {
+      authMethod = [authMethod];
+    }
 
-            _.some(authMethod, function (auth) {
-              if (_.isFunction(auth)) {
-                auth(req, asyncPass);
-              } else {
-                asyncPass(_.isObject(req.user) && options.roleChecker(req.user, auth));
-              }
-            });
-          } else {
-            if (_.isObject(req.user) && options.roleChecker(req.user, authMethod)) {
-              resolve();
-            } else {
-              reject();
-            }
-          }
-        }
+    return Promise.map(authMethod, function (method) {
+      if (_.isNull(method)) { // Null means no authorization method was picked. So skip it.
+        return Promise.resolve();
+      } else if (_.isString(method)) { // String is a role. So we'll need to use the external role checker.
+        return Promise.method(options.roleChecker)(req.user, method)
+        .then(function () {
+          return (_.isUndefined(result) || (_.isBoolean(result) && result)) ? Promise.resolve() : Promise.reject();
+        });
+      } else if (_.isFunction(method)) {
+
+        return Promise.method(method)(req)
+        .then(function (result) {
+          return (_.isUndefined(result) || (_.isBoolean(result) && result)) ? Promise.resolve() : Promise.reject();
+        });
+      } else {
+        return Promise.reject();
       }
     })
+    .any()
+    .return()
     .catch(function () {
       return Promise.reject(403);
     });
   }
 
   function executeRoute (req, res, next, routeDef) {
+    routeDef = _.defaults(routeDef, {
+      authentication: options.defaultAuthentication,
+      authorization: options.defaultAuthorization
+    });
+
     var context = {
       req: req,
       res: res
@@ -142,7 +115,9 @@ module.exports = function (options) {
     if (_.isObject(routeDef) || _.isFunction(routeDef)) {
       return authenticate(req, res, routeDef.authentication)
       .then(function () {
-        return authorize(req, routeDef.authorization);
+        if (!_.isNull(routeDef.authentication)) {
+          return authorize(req, routeDef.authorization);
+        }
       })
       .then(function () {
         var route = _.isFunction(routeDef) ? routeDef : routeDef.action;
@@ -257,13 +232,7 @@ module.exports = function (options) {
       _.each(routeCache, function (routeDef, controllerName) {
         _.each(routeDef, function (methods, routeName) {
           swaggerObject.paths[controllerName + routeName] = _.mapValues(methods, function (method) {
-            var operationObj = {
-              summary: method.summary,
-              description: method.description,
-              responses: method.responses
-            };
-
-            return _.omit(operationObj, _.isUndefined);
+            return _.omit(_.omit(method, ['action', 'authorization', 'authentication']), _.isUndefined);
           });
         })
       });
