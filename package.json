@@ -1,5 +1,5 @@
 {
-  "name": "rest-pipeline.js",
+  "name": "expresswayreststop",
   "version": "1.0.0",
   "description": "A http framework for creating swagger-enabled REST endpoints.",
   "main": "index.js",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/EQCO/rest-pipeline.js.git"
+    "url": "https://github.com/EQCO/expresswayreststop.git"
   },
   "author": "Josh Mackey <josh@eqco.co>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/EQCO/rest-pipeline.js/issues"
+    "url": "https://github.com/EQCO/expresswayreststop/issues"
   },
-  "homepage": "https://github.com/EQCO/rest-pipeline.js",
+  "homepage": "https://github.com/EQCO/expresswayreststop",
   "peerDependencies": {
     "express": "^4.12.3"
   },
