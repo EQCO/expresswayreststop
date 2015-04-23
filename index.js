@@ -257,17 +257,22 @@ module.exports = function (options) {
                 }
               };
             }
-          });
 
-          if (parameters.length > 0) {
-            swaggerObject.paths[controllerName + routeName].parameters = _.map(parameters, function (param) {
-              return {
-                name: param,
-                in: 'path',
-                type: 'string'
-              };
-            });
-          }
+            if (parameters.length > 0) {
+              var params = _.map(parameters, function (param) {
+                return {
+                  name: param,
+                  in: 'path',
+                  type: 'string'
+                };
+              });
+              if (_.isUndefined(result[key].parameters)) {
+                result[key].parameters = params;
+              } else {
+                result[key].parameters.concat(params);
+              }
+            }
+          });
         });
 
         swaggerObject.tags.push({
