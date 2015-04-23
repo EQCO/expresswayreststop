@@ -530,7 +530,7 @@ describe('rest-pipeline', function () {
       pipeline.register('test', {
         '/': {
           get: function () {
-            return this.req.headers.authentication;
+            return this.req.headers.authorization;
           }
         }
       });

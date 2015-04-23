@@ -292,7 +292,7 @@ module.exports = function (options) {
         } else {
           priorityRouter.use(function (req, res, next) {
             if (_.isUndefined(req.headers.authentication) && req.query.api_key) {
-              req.headers.authentication = 'Bearer ' + req.query.api_key;
+              req.headers.authorization = 'Bearer ' + req.query.api_key;
             }
             next();
           });
