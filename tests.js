@@ -47,6 +47,9 @@ describe('rest-pipeline', function () {
         },
         '/blah': {
           get: function () {}
+        },
+        '/capital': {
+          GET: function () {}
         }
       });
       return Promise.all([
@@ -58,6 +61,9 @@ describe('rest-pipeline', function () {
         .expect(204),
         request(app)
         .get('/test/blah')
+        .expect(204),
+        request(app)
+        .get('/test/capital')
         .expect(204),
         request(app)
         .get('/tesst/')

@@ -178,40 +178,40 @@ module.exports = function (options) {
     _.each(_.keys(controllerDefinition), function (route) {
       var chain = apiRouter.route(controllerPrefix + (route === '/' ? '' : route));
 
-      if (controllerDefinition[route].get) {
+      if (controllerDefinition[route].get || controllerDefinition[route].GET) {
         chain = chain.get(function (req, res, next) {
           options.traceLogger('Hit GET handler for %s on %s', route, controllerName);
-          return executeRoute(req, res, next, controllerDefinition[route].get);
+          return executeRoute(req, res, next, controllerDefinition[route].get || controllerDefinition[route].GET);
         });
       }
       
-      if (controllerDefinition[route].put) {
+      if (controllerDefinition[route].put || controllerDefinition[route].PUT) {
         chain = chain.put(function (req, res, next) {
           options.traceLogger('Hit PUT handler for %s on %s', route, controllerName);
           if (route === '/') {
           // Explicitly disallow PUTs on the index route.
             res.responder(404);
           } else {
-            return executeRoute(req, res, next, controllerDefinition[route].put);
+            return executeRoute(req, res, next, controllerDefinition[route].put || controllerDefinition[route].PUT);
           }
         });
       }
 
-      if (controllerDefinition[route].post) {
+      if (controllerDefinition[route].post || controllerDefinition[route].POST) {
         chain = chain.post(function (req, res, next) {
           options.traceLogger('Hit POST handler for %s on %s', route, controllerName);
-          executeRoute(req, res, next, controllerDefinition[route].post);
+          executeRoute(req, res, next, controllerDefinition[route].post || controllerDefinition[route].POST);
         });
       }
       
-      if (controllerDefinition[route].delete) {
+      if (controllerDefinition[route].delete || controllerDefinition[route].DELETE) {
         chain = chain.delete(function (req, res, next) {
           options.traceLogger('Hit DELETE handler for %s on %s', route, controllerName);
           if (route === '/') {
           // Explicitly disallow DELETEs on the index route.
             res.responder(404);
           } else {
-            return executeRoute(req, res, next, controllerDefinition[route].delete);
+            return executeRoute(req, res, next, controllerDefinition[route].delete || controllerDefinition[route].DELETE);
           }
         });
       }
