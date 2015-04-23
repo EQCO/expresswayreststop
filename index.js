@@ -19,7 +19,8 @@ module.exports = function (options) {
 
   var validationError,
       routeCache = {},
-      router = express.Router();
+      apiRouter = express.Router(),
+      priorityRouter = express.Router();
 
   // If null, blackhole it.
   if (_.isNull(options.traceLogger)) {
@@ -175,7 +176,7 @@ module.exports = function (options) {
     routeCache[controllerPrefix] = controllerDefinition;
 
     _.each(_.keys(controllerDefinition), function (route) {
-      var chain = router.route(controllerPrefix + (route === '/' ? '' : route));
+      var chain = apiRouter.route(controllerPrefix + (route === '/' ? '' : route));
 
       if (controllerDefinition[route].get) {
         chain = chain.get(function (req, res, next) {
@@ -234,6 +235,12 @@ module.exports = function (options) {
       _.each(routeCache, function (routeDef, controllerName) {
         var name = controllerName.substring(1);
         _.each(routeDef, function (methods, routeName) {
+          var parameters = [];
+          routeName = routeName.replace(/:.*/, function (value) {
+            var param = value.substring(1);
+            parameters.push(param);
+            return util.format('{%s}', param);
+          });
           swaggerObject.paths[controllerName + routeName] = _.transform(methods, function (result, method, key) {
             key = key.toLowerCase();
             result[key] =  _.omit(_.omit(method, ['action', 'authorization', 'authentication']), _.isUndefined);
@@ -241,9 +248,26 @@ module.exports = function (options) {
             if (_.isUndefined(result[key].tags)) {
               result[key].tags = [];
             }
-
             result[key].tags.push(name);
+
+            if (_.isUndefined(result[key].responses)) {
+              result[key].responses = {
+                default: {
+                  description: 'This is a placeholder response. Please define one on your controller.'
+                }
+              };
+            }
           });
+
+          if (parameters.length > 0) {
+            swaggerObject.paths[controllerName + routeName].parameters = _.map(parameters, function (param) {
+              return {
+                name: param,
+                in: 'path',
+                type: 'string'
+              };
+            });
+          }
         });
 
         swaggerObject.tags.push({
@@ -258,12 +282,16 @@ module.exports = function (options) {
         } else {
           swagger.initializeMiddleware(swaggerObject, function (middleware) {
             if (options.enableUI) {
-              router.use(middleware.swaggerUi({
+              priorityRouter.use(middleware.swaggerUi({
                 apiDocs: '/swagger.json',
                 swaggerUi: '/swagger'
               }));
             } else {
-              router.route('/swagger.json')
+              priorityRouter.route('/swagger/')
+              .all(function (req, res) {
+                res.status(404).end();
+              });
+              priorityRouter.route('/swagger.json')
               .get(function (req, res) {
                 res.status(200).json(swaggerObject);
               });
@@ -275,7 +303,12 @@ module.exports = function (options) {
     });
   };
 
+  var router = express.Router();
+  router.use(priorityRouter);
+  router.use(apiRouter);
+
   router.register = register;
   router.swagger = swagger;
+
   return router;
 };

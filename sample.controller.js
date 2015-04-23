@@ -25,4 +25,11 @@ module.exports = {
       }
     }
   },
+  '/:test': {
+    get: {
+      action: function () {
+
+      }
+    }
+  }
 };

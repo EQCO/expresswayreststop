@@ -1,6 +1,7 @@
 /* globals beforeEach, describe, it */
 'use strict';
 var _ = require('lodash'),
+    util = require('util'),
     should = require('chai').should(),
     Promise = require('bluebird'),
     express = require('express'),
@@ -509,7 +510,13 @@ describe('rest-pipeline', function () {
             pathList = _.keys(paths);
 
         routes.length.should.equal(pathList.length);
-        _.intersection(pathList, routes).length.should.equal(routes.length);
+        _.all(routes, function (item, index) {
+          item = item.replace(/:.*/, function (value) {
+            var param = value.substring(1);
+            return util.format('{%s}', param);
+          });
+          return pathList[index] === item;
+        }).should.equal(true);
       });
     });
   });
