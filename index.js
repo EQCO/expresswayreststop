@@ -1,6 +1,7 @@
 'use strict';
 var _ = require('lodash'),
     Promise = require('bluebird'),
+    util = require('util'),
     express = require('express');
 
 module.exports = function (options) {
@@ -226,15 +227,29 @@ module.exports = function (options) {
       var swaggerObject = {
         swagger: '2.0',
         info: info,
-        paths: {}
+        paths: {},
+        tags: []
       };
 
       _.each(routeCache, function (routeDef, controllerName) {
+        var name = controllerName.substring(1);
         _.each(routeDef, function (methods, routeName) {
           swaggerObject.paths[controllerName + routeName] = _.transform(methods, function (result, method, key) {
-            result[key.toLowerCase()] =  _.omit(_.omit(method, ['action', 'authorization', 'authentication']), _.isUndefined);
+            key = key.toLowerCase();
+            result[key] =  _.omit(_.omit(method, ['action', 'authorization', 'authentication']), _.isUndefined);
+
+            if (_.isUndefined(result[key].tags)) {
+              result[key].tags = [];
+            }
+
+            result[key].tags.push(name);
           });
-        })
+        });
+
+        swaggerObject.tags.push({
+          name: name,
+          description: util.format('Operations under the %s controller.', name)
+        });
       });
 
       swagger.specs.v2.validate(swaggerObject, function (err, result) {
