@@ -231,8 +231,8 @@ module.exports = function (options) {
 
       _.each(routeCache, function (routeDef, controllerName) {
         _.each(routeDef, function (methods, routeName) {
-          swaggerObject.paths[controllerName + routeName] = _.mapValues(methods, function (method) {
-            return _.omit(_.omit(method, ['action', 'authorization', 'authentication']), _.isUndefined);
+          swaggerObject.paths[controllerName + routeName] = _.transform(methods, function (result, method, key) {
+            result[key.toLowerCase()] =  _.omit(_.omit(method, ['action', 'authorization', 'authentication']), _.isUndefined);
           });
         })
       });

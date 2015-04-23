@@ -13,6 +13,16 @@ module.exports = {
       action: function () {
         
       }
+    },
+    POST: {
+      responses: {
+        '200': {
+          description: 'A successful POST on root'
+        }
+      },
+      action: function () {
+        
+      }
     }
   },
 };
