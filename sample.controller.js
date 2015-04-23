@@ -33,10 +33,8 @@ module.exports = {
     }
   },
     '/:test/otherstuff': {
-    get: {
-      action: function () {
-
-      }
+    get: function () {
+      
     }
   }
 };

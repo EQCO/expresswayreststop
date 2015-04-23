@@ -243,7 +243,12 @@ module.exports = function (options) {
           });
           swaggerObject.paths[controllerName + routeName] = _.transform(methods, function (result, method, key) {
             key = key.toLowerCase();
-            result[key] =  _.omit(_.omit(method, ['action', 'authorization', 'authentication']), _.isUndefined);
+
+            if (_.isFunction(method)) {
+              result[key] = {};
+            } else {
+              result[key] =  _.omit(_.omit(method, ['action', 'authorization', 'authentication']), _.isUndefined);
+            }
 
             if (_.isUndefined(result[key].tags)) {
               result[key].tags = [];
