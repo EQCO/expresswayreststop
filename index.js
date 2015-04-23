@@ -154,6 +154,8 @@ module.exports = function (options) {
         } else if (code === 403) {
           options.traceLogger('authorization failed');
           res.status(403).end();
+        } else if (_.isNumber(code)) {
+          res.status(code).end();
         } else {
           options.errorLogger(code);
           res.status(500).end();
