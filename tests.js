@@ -525,5 +525,26 @@ describe('rest-pipeline', function () {
         }).should.equal(true);
       });
     });
+
+    it('should convert apikey to bearer header', function () {
+      pipeline.register('test', {
+        '/': {
+          get: function () {
+            return this.req.headers.authentication;
+          }
+        }
+      });
+
+      return pipeline.swagger({
+        title: 'Mocha',
+        version: '1.0'
+      })
+      .then(function (swaggerObj) {
+        return request(app)
+        .get('/test/')
+        .query({api_key: 'abc'})
+        .expect(200, '"Bearer abc"');
+      });
+    });
   });
 });
