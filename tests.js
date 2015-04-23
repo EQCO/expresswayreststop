@@ -511,7 +511,7 @@ describe('rest-pipeline', function () {
 
         routes.length.should.equal(pathList.length);
         _.all(routes, function (item, index) {
-          item = item.replace(/:.*/, function (value) {
+          item = item.replace(/:\w*/, function (value) {
             var param = value.substring(1);
             return util.format('{%s}', param);
           });

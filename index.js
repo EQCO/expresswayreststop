@@ -236,7 +236,7 @@ module.exports = function (options) {
         var name = controllerName.substring(1);
         _.each(routeDef, function (methods, routeName) {
           var parameters = [];
-          routeName = routeName.replace(/:.*/, function (value) {
+          routeName = routeName.replace(/:\w*/, function (value) {
             var param = value.substring(1);
             parameters.push(param);
             return util.format('{%s}', param);

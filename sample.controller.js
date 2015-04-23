@@ -25,7 +25,14 @@ module.exports = {
       }
     }
   },
-  '/:test': {
+  '/:test/stuff': {
+    get: {
+      action: function () {
+
+      }
+    }
+  },
+    '/:test/otherstuff': {
     get: {
       action: function () {
 
