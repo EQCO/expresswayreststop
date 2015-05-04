@@ -4,6 +4,24 @@ var _ = require('lodash'),
     util = require('util'),
     express = require('express');
 
+function SkipResponse () {}
+function Response (statusCode, mimeType, body) {
+  if (_.isNumber(statusCode)) {
+    this.statusCode = statusCode;
+
+    if (_.isUndefined(body)) {
+      this.body = mimeType;
+    } else {
+      this.mimeType = mimeType;
+      this.body = body;
+    }
+  } else {
+    this.statusCode = 200;
+    this.mimeType = statusCode;
+    this.body = mimeType;
+  }
+}
+
 module.exports = function (options) {
   options = _.defaults(options || {}, {
     defaultAuthentication: null,
@@ -111,7 +129,9 @@ module.exports = function (options) {
 
     var context = {
       req: req,
-      res: res
+      res: res,
+      skipResponse: function () { return new SkipResponse();  },
+      response: function (statusCode, mimeType, body) { return new Response(statusCode, mimeType, body); }
     };
     // Make sure the routeDef actually exists, could be a 404.
     if (_.isObject(routeDef) || _.isFunction(routeDef)) {
@@ -125,23 +145,38 @@ module.exports = function (options) {
         var route = _.isFunction(routeDef) ? routeDef : routeDef.action;
         return Promise.method(route).call(context, req, res)
         .then(function (result) {
-          if (!_.isBoolean(result) || result) {
-            if (_.isUndefined(result)) {
-              if (!res.headersSent) {
-                res.status(204).end();
-              }
-            } else if (_.isNumber(result)) {
-              res.status(result).end();
-            } else if (_.isArray(result) && _.includes([2, 3], result.length) && _.isNumber(result[0])) {
-              if (result.length === 2) {
-                res.status(result[0]).json(_.has(result[1], 'toJSON') ? result[1].toJSON() : result[1]);
-              } else { // result.length === 3
-                res.status(result[0]).type(result[1]).send(result[2]);
-              }
+          if (result instanceof SkipResponse) {
+            return;
+          } else if (result instanceof Response) {
+            if (_.isUndefined(result.mimeType)) {
+              res.status(result.statusCode).json(result.body);
             } else {
-              res.status(200).json(_.has(result, 'toJSON') ? result.toJSON() : result);
+              res.status(result.statusCode).type(result.mimeType).send(result.body);
             }
+          } else if (_.isUndefined(result) && !res.headersSent) {
+            res.status(204).end();
+          } else if (_.isNumber(result)) {
+            res.status(result).end();
+          } else {
+            res.status(200).json(_.has(result, 'toJSON') ? result.toJSON() : result);
           }
+          // if (!_.isBoolean(result) || result) {
+          //   if (_.isUndefined(result)) {
+          //     if (!res.headersSent) {
+          //       res.status(204).end();
+          //     }
+          //   } else if (_.isNumber(result)) {
+          //     res.status(result).end();
+          //   } else if (_.isArray(result) && _.includes([2, 3], result.length) && _.isNumber(result[0])) {
+          //     if (result.length === 2) {
+          //       res.status(result[0]).json(_.has(result[1], 'toJSON') ? result[1].toJSON() : result[1]);
+          //     } else { // result.length === 3
+          //       res.status(result[0]).type(result[1]).send(result[2]);
+          //     }
+          //   } else {
+          //     res.status(200).json(_.has(result, 'toJSON') ? result.toJSON() : result);
+          //   }
+          // }
         });
       })
       .catch(validationError, function (error) {

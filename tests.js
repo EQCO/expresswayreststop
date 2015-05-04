@@ -155,14 +155,14 @@ describe('rest-pipeline', function () {
         });
       });
 
-      it('should do nothing when false is returned', function () {
+      it('should do nothing when skipResponse is returned', function () {
         pipeline.register({
           '/': {
             get: {
               authorization: null,
               authentication: null,
               action: function() {
-                return false;
+                return this.skipResponse();
               }
             }
           }
@@ -217,26 +217,6 @@ describe('rest-pipeline', function () {
         .expect(200, '"foo"') // Is a JSON string.
         .expect('Content-Type', /json/);
       });
-
-      it('should call toJSON if exists (array format)', function () {
-        pipeline.register({
-          '/': {
-            get: {
-              authorization: null,
-              authentication: null,
-              action: function() {
-                return [400, { toJSON: function () {
-                  return 'foo';
-                }}];
-              }
-            }
-          }
-        });
-        return request(app)
-        .get('/')
-        .expect(400, '"foo"')
-        .expect('Content-Type', /json/);
-      });
     });
 
     it('should return the status code of 400 when 400 returned', function () {
@@ -256,14 +236,14 @@ describe('rest-pipeline', function () {
       .expect(400);
     });
 
-    it('should return a status code and object when array returned', function () {
+    it('should return a status code and object when Response is returned', function () {
       pipeline.register({
         '/': {
           get: {
             authorization: null,
             authentication: null,
             action: function() {
-              return [200, true];
+              return this.response(200, true);
             }
           }
         }
@@ -300,7 +280,7 @@ describe('rest-pipeline', function () {
             authorization: null,
             authentication: null,
             action: function() {
-              return [200, 'html', '<a></a>'];
+              return this.response('html', '<a></a>');
             }
           }
         }
@@ -318,7 +298,7 @@ describe('rest-pipeline', function () {
             authorization: null,
             authentication: null,
             action: function() {
-              return [200, 'text/calendar', 'blahblah\nblahblah'];
+              return this.response(200, 'text/calendar', 'blahblah\nblahblah');
             }
           }
         }
