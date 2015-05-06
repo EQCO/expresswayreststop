@@ -160,23 +160,6 @@ module.exports = function (options) {
           } else {
             res.status(200).json(_.has(result, 'toJSON') ? result.toJSON() : result);
           }
-          // if (!_.isBoolean(result) || result) {
-          //   if (_.isUndefined(result)) {
-          //     if (!res.headersSent) {
-          //       res.status(204).end();
-          //     }
-          //   } else if (_.isNumber(result)) {
-          //     res.status(result).end();
-          //   } else if (_.isArray(result) && _.includes([2, 3], result.length) && _.isNumber(result[0])) {
-          //     if (result.length === 2) {
-          //       res.status(result[0]).json(_.has(result[1], 'toJSON') ? result[1].toJSON() : result[1]);
-          //     } else { // result.length === 3
-          //       res.status(result[0]).type(result[1]).send(result[2]);
-          //     }
-          //   } else {
-          //     res.status(200).json(_.has(result, 'toJSON') ? result.toJSON() : result);
-          //   }
-          // }
         });
       })
       .catch(validationError, function (error) {
@@ -257,7 +240,8 @@ module.exports = function (options) {
 
   var swagger = function (info, options) {
     options = _.defaults(options || {}, {
-      enableUI: false
+      enableUI: false,
+      basePath: '/'
     });
 
     return new Promise(function (resolve, reject) {
@@ -265,6 +249,7 @@ module.exports = function (options) {
       var swaggerObject = {
         swagger: '2.0',
         info: info,
+        basePath: options.basePath,
         paths: {},
         tags: []
       };
