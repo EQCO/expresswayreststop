@@ -29,6 +29,8 @@
     "bluebird": "^2.9.24",
     "express": "^4.12.3",
     "lodash": "^3.6.0",
+    "pg": "^4.3.0",
+    "pg-hstore": "^2.3.2",
     "swagger-tools": "^0.8.5"
   }
 }
