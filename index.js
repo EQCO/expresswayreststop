@@ -175,7 +175,7 @@ module.exports = function (options) {
         } else if (_.isNumber(code)) {
           res.status(code).end();
         } else {
-          options.errorLogger(code);
+          options.errorLogger(code.stack || code);
           res.status(500).end();
         }
       });
