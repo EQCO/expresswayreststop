@@ -1,3 +1,5 @@
+![NPM Version](https://img.shields.io/npm/v/expresswayreststop.svg)
+
 A framework for creating swagger-enabled REST endpoints.
 
 See sample.controller.js for examples on what the endpoint definitions can look like.
